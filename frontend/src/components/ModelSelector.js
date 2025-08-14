@@ -18,8 +18,11 @@ const ModelSelector = ({ models, providers, currentSession, onUpdateSession }) =
     const newProvider = e.target.value;
     setSelectedProvider(newProvider);
     
+    // 当提供商改变时，重置模型选择
+    setSelectedModel('');
+    
     if (currentSession && onUpdateSession) {
-      await onUpdateSession(currentSession.id, { api_provider: newProvider });
+      await onUpdateSession(currentSession.id, { api_provider: newProvider, model: '' });
     }
   };
 
@@ -33,6 +36,14 @@ const ModelSelector = ({ models, providers, currentSession, onUpdateSession }) =
     }
   };
 
+  // 获取当前提供商的模型列表
+  const getCurrentProviderModels = () => {
+    if (selectedProvider && models && models[selectedProvider]) {
+      return models[selectedProvider];
+    }
+    return [];
+  };
+
   return (
     <div className="model-selector">
       <h3>模型配置</h3>
@@ -44,7 +55,7 @@ const ModelSelector = ({ models, providers, currentSession, onUpdateSession }) =
           disabled={!currentSession}
         >
           <option value="">请选择提供商</option>
-          {providers.map((provider, index) => (
+          {providers && providers.map((provider, index) => (
             <option key={index} value={provider}>
               {provider}
             </option>
@@ -57,10 +68,10 @@ const ModelSelector = ({ models, providers, currentSession, onUpdateSession }) =
         <select 
           value={selectedModel}
           onChange={handleModelChange}
-          disabled={!currentSession}
+          disabled={!currentSession || !selectedProvider}
         >
           <option value="">请选择模型</option>
-          {models.map((model, index) => (
+          {getCurrentProviderModels().map((model, index) => (
             <option key={index} value={model}>
               {model}
             </option>

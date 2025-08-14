@@ -1,24 +1,48 @@
 import os
+import json
 from dotenv import load_dotenv
 import openai
 
 # 加载环境变量
 load_dotenv()
 
-# 获取OpenAI配置
-openai_api_key = os.getenv("OPENAI_API_KEY")
-openai_api_base = os.getenv("OPENAI_API_BASE")
+# 加载配置文件
+def load_config():
+    try:
+        with open('config.json', 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {"providers": []}
 
-# 获取默认模型配置
-default_model = os.getenv("DEFAULT_MODEL", "gpt-3.5-turbo")
-default_provider = os.getenv("DEFAULT_PROVIDER", "openai")
+# 获取配置
+config = load_config()
 
-# 初始化OpenAI客户端
-openai_client = None
+# 获取提供商列表
+providers = config.get("providers", [])
 
-# 尝试初始化OpenAI客户端
-if openai_api_key:
-    if openai_api_base:
-        openai_client = openai.OpenAI(api_key=openai_api_key, base_url=openai_api_base)
-    else:
-        openai_client = openai.OpenAI(api_key=openai_api_key)
+# 初始化默认值
+default_provider = "OpenAI"
+default_model = "gpt-4o"
+
+# 如果有配置的提供商，使用第一个作为默认
+if providers:
+    default_provider = providers[0].get("name", default_provider)
+    default_model = providers[0].get("models", [default_model])[0]
+
+# 初始化OpenAI客户端字典
+openai_clients = {}
+
+# 根据配置初始化客户端
+for provider in providers:
+    name = provider.get("name")
+    api_key = provider.get("api_key")
+    base_url = provider.get("baseURL")
+    
+    if api_key and api_key != "your-sk-here":
+        try:
+            openai_clients[name] = openai.OpenAI(api_key=api_key, base_url=base_url)
+        except Exception as e:
+            print(f"初始化 {name} 客户端失败: {e}")
+
+# 获取默认客户端
+default_client = openai_clients.get(default_provider) if openai_clients else None

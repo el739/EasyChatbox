@@ -37,11 +37,12 @@ function App() {
       // 如果当前会话没有配置，使用默认配置
       if (currentSession && (!currentSession.model || !currentSession.api_provider)) {
         const updatedSession = { ...currentSession };
-        if (!updatedSession.model && data.default_model) {
-          updatedSession.model = data.default_model;
-        }
         if (!updatedSession.api_provider && data.default_provider) {
           updatedSession.api_provider = data.default_provider;
+        }
+        // 根据提供商设置默认模型
+        if (!updatedSession.model && updatedSession.api_provider && data.models[updatedSession.api_provider]) {
+          updatedSession.model = data.models[updatedSession.api_provider][0] || data.default_model;
         }
         
         if (updatedSession.model !== currentSession.model || updatedSession.api_provider !== currentSession.api_provider) {

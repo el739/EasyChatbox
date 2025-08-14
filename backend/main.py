@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from modules.config import openai_client
+from modules.config import openai_clients
 from modules.session_manager import initialize_default_session
 from modules.api_routes import setup_routes
 

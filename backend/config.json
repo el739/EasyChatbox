@@ -1,20 +1,22 @@
-[
+{
+  "providers": [
     {
-        "name": "OpenAI",
-        "baseURL": "https://api.openai.com/v1",
-        "api_key": "your-sk-here",
-        "models": [
-            "gpt-4o",
-            "o3"
-        ]
+      "name": "OpenAI",
+      "baseURL": "https://api.openai.com/v1",
+      "api_key": "your-sk-here",
+      "models": [
+        "gpt-4o",
+        "o3"
+      ]
     },
     {
-        "name": "OpenRouter",
-        "baseURL": "https://openrouter.ai/v1",
-        "api_key": "your-sk-here",
-        "models": [
-            "openai/gpt-4o",
-            "google/gemini-1.5-flash"
-        ]
+      "name": "OpenRouter",
+      "baseURL": "https://openrouter.ai/v1",
+      "api_key": "your-sk-here",
+      "models": [
+        "openai/gpt-4o",
+        "google/gemini-1.5-flash"
+      ]
     }
-]
+  ]
+}

@@ -8,7 +8,7 @@ from .session_manager import (
     initialize_default_session
 )
 from .openai_client import call_openai_api
-from .config import openai_client, default_provider, default_model
+from .config import openai_clients, default_provider, default_model, providers
 
 def setup_routes(app: FastAPI):
     """设置API路由"""
@@ -100,7 +100,7 @@ def setup_routes(app: FastAPI):
         
         # 调用OpenAI API
         try:
-            response_content = await call_openai_api(messages, session.model)
+            response_content = await call_openai_api(messages, session.model, session.api_provider)
             
             # 添加助手消息
             assistant_message = Message(
@@ -130,16 +130,19 @@ def setup_routes(app: FastAPI):
         """获取配置信息"""
         # 根据实际配置返回可用的模型和提供商
         available_providers = []
-        available_models = []
+        available_models = {}
         
-        if openai_client:
-            available_providers.append("openai")
-            available_models = ["gpt-3.5-turbo", "gpt-4", "gpt-4o"]
+        # 从配置文件中获取提供商和模型信息
+        for provider in providers:
+            name = provider.get("name")
+            models = provider.get("models", [])
+            available_providers.append(name)
+            available_models[name] = models
         
-        # 如果没有配置API密钥，仍然返回默认选项
+        # 如果没有配置提供商，仍然返回默认选项
         if not available_providers:
             available_providers = [default_provider]
-            available_models = [default_model] if default_model else ["gpt-3.5-turbo", "gpt-4"]
+            available_models = {default_provider: [default_model] if default_model else ["gpt-3.5-turbo"]}
         
         return {
             "providers": available_providers,
