@@ -1,0 +1,55 @@
+.model-selector {
+  padding: 1rem;
+  border-top: 1px solid #ddd;
+}
+
+.model-selector h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+}
+
+.config-item {
+  margin-bottom: 1rem;
+}
+
+.config-item label {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.config-item select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: white;
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
+.config-item select:disabled {
+  background-color: #f5f5f5;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.config-item select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+}
+
+.config-info {
+  margin-top: 1rem;
+  padding: 0.8rem;
+  background-color: #e9ecef;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: #495057;
+}
+
+.config-info p {
+  margin: 0;
+}
