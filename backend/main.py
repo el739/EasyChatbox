@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
@@ -6,9 +6,24 @@ import json
 import os
 from datetime import datetime
 from dotenv import load_dotenv
+import openai
 
 # 加载环境变量
 load_dotenv()
+
+# 初始化OpenAI客户端
+openai_client = None
+
+# 获取OpenAI配置
+openai_api_key = os.getenv("OPENAI_API_KEY")
+openai_api_base = os.getenv("OPENAI_API_BASE")
+
+# 尝试初始化OpenAI客户端
+if openai_api_key:
+    if openai_api_base:
+        openai_client = openai.OpenAI(api_key=openai_api_key, base_url=openai_api_base)
+    else:
+        openai_client = openai.OpenAI(api_key=openai_api_key)
 
 app = FastAPI()
 
@@ -54,6 +69,22 @@ class ChatRequest(BaseModel):
 # 简单的内存存储（生产环境应该使用数据库）
 chat_sessions: Dict[str, ChatSession] = {}
 current_session_id: Optional[str] = None
+
+# OpenAI API调用函数
+async def call_openai_api(messages: List[Dict[str, str]], model: str = "gpt-3.5-turbo") -> str:
+    if not openai_client:
+        raise HTTPException(status_code=500, detail="OpenAI API密钥未配置")
+    
+    try:
+        response = openai_client.chat.completions.create(
+            model=model,
+            messages=messages,
+            temperature=0.7,
+            max_tokens=1000
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"OpenAI API调用失败: {str(e)}")
 
 # 初始化默认会话
 default_session = ChatSession(
@@ -145,14 +176,15 @@ async def clear_messages(session_id: str):
 
 @app.post("/chat")
 async def chat(chat_request: ChatRequest):
-    """与LLM聊天（模拟响应）"""
-    # 这里应该是调用实际的LLM API
-    # 目前返回模拟响应
+    """与LLM聊天（真实API调用）"""
     session_id = chat_request.session_id
     message = chat_request.message
     
     if session_id not in chat_sessions:
-        return {"error": "会话未找到"}
+        raise HTTPException(status_code=404, detail="会话未找到")
+    
+    # 获取会话信息
+    session = chat_sessions[session_id]
     
     # 添加用户消息
     user_message = Message(
@@ -160,29 +192,66 @@ async def chat(chat_request: ChatRequest):
         content=message,
         timestamp=datetime.now().isoformat()
     )
-    chat_sessions[session_id].messages.append(user_message)
+    session.messages.append(user_message)
     
-    # 模拟LLM响应
-    assistant_message = Message(
-        role="assistant",
-        content=f"这是对 '{message}' 的模拟响应。在实际应用中，这里会调用真实的LLM API。",
-        timestamp=datetime.now().isoformat()
-    )
-    chat_sessions[session_id].messages.append(assistant_message)
-    chat_sessions[session_id].updated_at = datetime.now().isoformat()
+    # 准备消息历史用于API调用
+    messages = []
+    for msg in session.messages:
+        messages.append({
+            "role": msg.role,
+            "content": msg.content
+        })
     
-    return {
-        "session": chat_sessions[session_id],
-        "response": assistant_message
-    }
+    # 调用OpenAI API
+    try:
+        response_content = await call_openai_api(messages, session.model)
+        
+        # 添加助手消息
+        assistant_message = Message(
+            role="assistant",
+            content=response_content,
+            timestamp=datetime.now().isoformat()
+        )
+        session.messages.append(assistant_message)
+        session.updated_at = datetime.now().isoformat()
+        
+        return {
+            "session": session,
+            "response": assistant_message
+        }
+    except Exception as e:
+        # 如果API调用失败，添加错误消息
+        error_message = Message(
+            role="assistant",
+            content=f"API调用失败: {str(e)}",
+            timestamp=datetime.now().isoformat()
+        )
+        session.messages.append(error_message)
+        session.updated_at = datetime.now().isoformat()
+        
+        raise HTTPException(status_code=500, detail=f"API调用失败: {str(e)}")
 
 @app.get("/config")
 async def get_config():
     """获取配置信息"""
-    # 在实际应用中，这里应该从安全的地方获取配置
+    # 根据实际配置返回可用的模型和提供商
+    available_providers = []
+    available_models = {}
+    
+    if openai_client:
+        available_providers.append("openai")
+        available_models["openai"] = ["gpt-3.5-turbo", "gpt-4", "gpt-4o"]
+    
+    # 如果没有配置API密钥，仍然返回默认选项
+    if not available_providers:
+        available_providers = ["openai"]
+        available_models = {
+            "openai": ["gpt-3.5-turbo", "gpt-4"]
+        }
+    
     return {
-        "models": ["gpt-3.5-turbo", "gpt-4", "claude-2", "claude-3", "claude-3.5-sonnet"],
-        "providers": ["openai", "anthropic", "azure", "google"]
+        "providers": available_providers,
+        "models": available_models
     }
 
 if __name__ == "__main__":
