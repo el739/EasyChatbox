@@ -29,14 +29,19 @@ if providers:
     default_provider = providers[0].get("name", default_provider)
     default_model = providers[0].get("models", [default_model])[0]
 
-# 初始化OpenAI客户端字典
+# 初始化OpenAI客户端字典和参数
 openai_clients = {}
+provider_parameters = {}
 
 # 根据配置初始化客户端
 for provider in providers:
     name = provider.get("name")
     api_key = provider.get("api_key")
     base_url = provider.get("baseURL")
+    parameters = provider.get("parameters", {})
+    
+    # 存储提供商参数
+    provider_parameters[name] = parameters
     
     if api_key and api_key != "your-sk-here":
         try:
