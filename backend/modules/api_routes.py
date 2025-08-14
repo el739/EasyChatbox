@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from typing import List, Dict
 from datetime import datetime
 from .models import Message, ChatSession, SessionUpdate, ChatRequest
@@ -8,26 +9,47 @@ from .session_manager import (
     initialize_default_session
 )
 from .openai_client import call_openai_api
-from .config import openai_clients, default_provider, default_model, providers
+from .config import openai_clients, default_provider, default_model, providers, auth_enabled, auth_username, auth_password
+import secrets
+
+# 创建HTTP Basic认证实例
+security = HTTPBasic()
+
+# 认证依赖函数
+def authenticate(credentials: HTTPBasicCredentials = Depends(security)):
+    # 使用secrets.compare_digest来安全地比较用户名和密码
+    correct_username = secrets.compare_digest(credentials.username, auth_username)
+    correct_password = secrets.compare_digest(credentials.password, auth_password)
+    
+    if not (correct_username and correct_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+    return credentials.username
 
 def setup_routes(app: FastAPI):
     """设置API路由"""
     
-    @app.get("/")
+    # 确定是否需要认证依赖
+    auth_dependency = Depends(authenticate) if auth_enabled else None
+    
+    @app.get("/", dependencies=[auth_dependency] if auth_enabled else [])
     async def root():
         return {"message": "EasyChatbox API"}
 
-    @app.get("/sessions")
+    @app.get("/sessions", dependencies=[auth_dependency] if auth_enabled else [])
     async def get_sessions_endpoint():
         """获取所有聊天会话"""
         return get_sessions()
 
-    @app.post("/sessions")
+    @app.post("/sessions", dependencies=[auth_dependency] if auth_enabled else [])
     async def create_session_endpoint(title: str = "新对话"):
         """创建新聊天会话"""
         return create_session(title)
 
-    @app.get("/sessions/{session_id}")
+    @app.get("/sessions/{session_id}", dependencies=[auth_dependency] if auth_enabled else [])
     async def get_session_endpoint(session_id: str):
         """获取特定聊天会话"""
         session = get_session(session_id)
@@ -35,7 +57,7 @@ def setup_routes(app: FastAPI):
             return session
         return {"error": "会话未找到"}
 
-    @app.put("/sessions/{session_id}")
+    @app.put("/sessions/{session_id}", dependencies=[auth_dependency] if auth_enabled else [])
     async def update_session_endpoint(session_id: str, update: SessionUpdate):
         """更新会话配置"""
         session = update_session(
@@ -48,14 +70,14 @@ def setup_routes(app: FastAPI):
             return session
         return {"error": "会话未找到"}
 
-    @app.delete("/sessions/{session_id}")
+    @app.delete("/sessions/{session_id}", dependencies=[auth_dependency] if auth_enabled else [])
     async def delete_session_endpoint(session_id: str):
         """删除聊天会话"""
         if delete_session(session_id):
             return {"message": "会话已删除"}
         return {"error": "会话未找到"}
 
-    @app.post("/sessions/{session_id}/messages")
+    @app.post("/sessions/{session_id}/messages", dependencies=[auth_dependency] if auth_enabled else [])
     async def add_message_endpoint(session_id: str, message: Message):
         """向会话添加消息"""
         updated_session = add_message_to_session(session_id, message)
@@ -63,7 +85,7 @@ def setup_routes(app: FastAPI):
             return updated_session
         return {"error": "会话未找到"}
 
-    @app.delete("/sessions/{session_id}/messages")
+    @app.delete("/sessions/{session_id}/messages", dependencies=[auth_dependency] if auth_enabled else [])
     async def clear_messages_endpoint(session_id: str):
         """清空会话消息"""
         updated_session = clear_session_messages(session_id)
@@ -71,7 +93,7 @@ def setup_routes(app: FastAPI):
             return updated_session
         return {"error": "会话未找到"}
 
-    @app.post("/chat")
+    @app.post("/chat", dependencies=[auth_dependency] if auth_enabled else [])
     async def chat_endpoint(chat_request: ChatRequest):
         """与LLM聊天（真实API调用）"""
         session_id = chat_request.session_id
@@ -125,7 +147,7 @@ def setup_routes(app: FastAPI):
             
             raise HTTPException(status_code=500, detail=f"API调用失败: {str(e)}")
 
-    @app.get("/config")
+    @app.get("/config", dependencies=[auth_dependency] if auth_enabled else [])
     async def get_config_endpoint():
         """获取配置信息"""
         # 根据实际配置返回可用的模型和提供商

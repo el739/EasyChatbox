@@ -20,6 +20,12 @@ config = load_config()
 # 获取提供商列表
 providers = config.get("providers", [])
 
+# 获取认证配置
+auth_config = config.get("auth", {})
+auth_enabled = auth_config.get("enabled", False)
+auth_username = auth_config.get("username", "admin")
+auth_password = auth_config.get("password", "password")
+
 # 初始化默认值
 default_provider = "OpenAI"
 default_model = "gpt-4o"
