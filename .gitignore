@@ -208,3 +208,5 @@ __marimo__/
 
 .claude/
 CLAUDE.md
+frontend/node_modules/
+frontend/package-lock.json

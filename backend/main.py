@@ -236,18 +236,16 @@ async def get_config():
     """获取配置信息"""
     # 根据实际配置返回可用的模型和提供商
     available_providers = []
-    available_models = {}
+    available_models = []
     
     if openai_client:
         available_providers.append("openai")
-        available_models["openai"] = ["gpt-3.5-turbo", "gpt-4", "gpt-4o"]
+        available_models = ["gpt-3.5-turbo", "gpt-4", "gpt-4o"]
     
     # 如果没有配置API密钥，仍然返回默认选项
     if not available_providers:
         available_providers = ["openai"]
-        available_models = {
-            "openai": ["gpt-3.5-turbo", "gpt-4"]
-        }
+        available_models = ["gpt-3.5-turbo", "gpt-4"]
     
     return {
         "providers": available_providers,
