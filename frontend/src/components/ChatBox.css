@@ -30,6 +30,8 @@
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.9rem;
+  max-width: 100px;
+  width: auto;
 }
 
 .clear-btn:hover:not(:disabled) {
