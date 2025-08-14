@@ -37,7 +37,7 @@
     }
   ],
   "auth": {
-    "enabled": false,
+    "enabled": true,
     "username": "admin",
     "password": "securepassword"
   }
