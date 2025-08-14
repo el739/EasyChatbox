@@ -18,6 +18,10 @@ openai_client = None
 openai_api_key = os.getenv("OPENAI_API_KEY")
 openai_api_base = os.getenv("OPENAI_API_BASE")
 
+# 获取默认模型配置
+default_model = os.getenv("DEFAULT_MODEL", "gpt-3.5-turbo")
+default_provider = os.getenv("DEFAULT_PROVIDER", "openai")
+
 # 尝试初始化OpenAI客户端
 if openai_api_key:
     if openai_api_base:
@@ -48,8 +52,8 @@ class ChatSession(BaseModel):
     messages: List[Message]
     created_at: str
     updated_at: str
-    model: str = "gpt-3.5-turbo"
-    api_provider: str = "openai"
+    model: str = default_model
+    api_provider: str = default_provider
 
 class ChatConfig(BaseModel):
     api_key: str
@@ -71,7 +75,7 @@ chat_sessions: Dict[str, ChatSession] = {}
 current_session_id: Optional[str] = None
 
 # OpenAI API调用函数
-async def call_openai_api(messages: List[Dict[str, str]], model: str = "gpt-3.5-turbo") -> str:
+async def call_openai_api(messages: List[Dict[str, str]], model: str = default_model) -> str:
     if not openai_client:
         raise HTTPException(status_code=500, detail="OpenAI API密钥未配置")
     
@@ -244,12 +248,14 @@ async def get_config():
     
     # 如果没有配置API密钥，仍然返回默认选项
     if not available_providers:
-        available_providers = ["openai"]
-        available_models = ["gpt-3.5-turbo", "gpt-4"]
+        available_providers = [default_provider]
+        available_models = [default_model] if default_model else ["gpt-3.5-turbo", "gpt-4"]
     
     return {
         "providers": available_providers,
-        "models": available_models
+        "models": available_models,
+        "default_provider": default_provider,
+        "default_model": default_model
     }
 
 if __name__ == "__main__":
