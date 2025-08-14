@@ -23,6 +23,13 @@ function App() {
     setIsLoggedIn(true);
   };
 
+  // 当登录状态改变时初始化数据
+  useEffect(() => {
+    if (isLoggedIn) {
+      initializeData();
+    }
+  }, [isLoggedIn]);
+
   // 创建带认证头的fetch选项
   const createFetchOptions = (options = {}) => {
     const authHeader = 'Basic ' + btoa(username + ':' + password);
@@ -89,7 +96,7 @@ function App() {
         method: 'POST'
       }));
       const newSession = await response.json();
-      setSessions([...sessions, newSession]);
+      setSessions([...(Array.isArray(sessions) ? sessions : []), newSession]);
       setCurrentSession(newSession);
     } catch (err) {
       setError('创建会话失败: ' + err.message);
@@ -232,10 +239,10 @@ function App() {
   };
 
   // 初始化数据
-  useEffect(() => {
-    fetchSessions();
-    fetchConfig();
-  }, []);
+  const initializeData = async () => {
+    await fetchSessions();
+    await fetchConfig();
+  };
 
   // 如果未登录，显示登录界面
   if (!isLoggedIn) {
