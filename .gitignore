@@ -210,3 +210,4 @@ __marimo__/
 CLAUDE.md
 frontend/node_modules/
 frontend/package-lock.json
+*.db
