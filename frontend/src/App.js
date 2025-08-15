@@ -3,12 +3,8 @@ import ChatBox from './components/ChatBox';
 import SessionManager from './components/SessionManager';
 import ModelSelector from './components/ModelSelector';
 import Login from './components/Login';
+import { getApiBaseUrl } from './utils/api';
 import './App.css';
-
-// 获取API基础URL
-const getApiBaseUrl = () => {
-  return process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
-};
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);

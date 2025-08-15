@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getApiBaseUrl } from '../utils/api';
 import './Login.css';
 
 const Login = ({ onLogin }) => {
@@ -16,7 +17,7 @@ const Login = ({ onLogin }) => {
     
     try {
       // 测试认证信息
-      const response = await fetch('http://localhost:8000/', {
+      const response = await fetch(`${getApiBaseUrl()}/`, {
         method: 'GET',
         headers: {
           'Authorization': 'Basic ' + btoa(username + ':' + password)
