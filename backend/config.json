@@ -28,7 +28,7 @@
     },
     {
       "name":"OpenRouter",
-      "baseURL":"https://openrouter.ai/v1",
+      "baseURL":"https://openrouter.ai/api/v1",
       "api_key":"your-sk-here",
       "models":[
         "anthropic/claude-opus-4.1",
