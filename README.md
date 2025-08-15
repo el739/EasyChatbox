@@ -169,6 +169,35 @@ npm run build
 
 然后将 `build` 目录中的文件部署到 Web 服务器。
 
+### 自定义域名配置
+
+本项目支持自定义域名配置，无需修改源代码：
+
+1. 前端环境变量配置：
+   - 开发环境：使用 `frontend/.env` 文件
+   - 生产环境：使用 `frontend/.env.production` 文件
+   
+   在这些文件中设置 `REACT_APP_API_BASE_URL` 变量来指定后端API地址：
+   ```env
+   # 开发环境
+   REACT_APP_API_BASE_URL=http://localhost:8000
+   
+   # 生产环境
+   REACT_APP_API_BASE_URL=https://backend.chat.mydomain.com
+   ```
+
+2. 后端CORS配置：
+   在 `backend/main.py` 中已配置允许的前端域名：
+   ```python
+   allow_origins=["http://localhost:3000", "https://chat.mydomain.com"]
+   ```
+   
+   如需添加更多域名，请在 `allow_origins` 列表中添加相应的域名。
+
+3. 部署时的域名映射：
+   - 前端：`chat.mydomain.com` 指向前端静态文件服务器
+   - 后端：`backend.chat.mydomain.com` 指向后端API服务器
+
 ## 许可证
 
 本项目采用 Apache 2.0 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。

@@ -28,7 +28,7 @@ def authenticate(credentials: HTTPBasicCredentials = Depends(security)):
 # 添加CORS中间件
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # 允许前端地址
+    allow_origins=["http://localhost:3000", "https://chat.mydomain.com"],  # 允许前端地址
     allow_credentials=True,
     allow_methods=["*"],  # 允许所有方法
     allow_headers=["*"],  # 允许所有头部

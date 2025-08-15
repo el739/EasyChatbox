@@ -5,6 +5,11 @@ import ModelSelector from './components/ModelSelector';
 import Login from './components/Login';
 import './App.css';
 
+// 获取API基础URL
+const getApiBaseUrl = () => {
+  return process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
+};
+
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState('');
@@ -45,7 +50,7 @@ function App() {
   // 获取所有会话
   const fetchSessions = async () => {
     try {
-      const response = await fetch('http://localhost:8000/sessions', createFetchOptions());
+      const response = await fetch(`${getApiBaseUrl()}/sessions`, createFetchOptions());
       const data = await response.json();
       setSessions(data);
       if (data.length > 0 && !currentSession) {
@@ -59,7 +64,7 @@ function App() {
   // 获取配置信息
   const fetchConfig = async () => {
     try {
-      const response = await fetch('http://localhost:8000/config', createFetchOptions());
+      const response = await fetch(`${getApiBaseUrl()}/config`, createFetchOptions());
       const data = await response.json();
       setModels(data.models);
       setProviders(data.providers);
@@ -92,7 +97,7 @@ function App() {
   // 创建新会话
   const createNewSession = async (title = '新对话') => {
     try {
-      const response = await fetch(`http://localhost:8000/sessions?title=${encodeURIComponent(title)}`, createFetchOptions({
+      const response = await fetch(`${getApiBaseUrl()}/sessions?title=${encodeURIComponent(title)}`, createFetchOptions({
         method: 'POST'
       }));
       const newSession = await response.json();
@@ -111,7 +116,7 @@ function App() {
   // 删除会话
   const deleteSession = async (sessionId) => {
     try {
-      await fetch(`http://localhost:8000/sessions/${sessionId}`, createFetchOptions({
+      await fetch(`${getApiBaseUrl()}/sessions/${sessionId}`, createFetchOptions({
         method: 'DELETE'
       }));
       const updatedSessions = sessions.filter(session => session.id !== sessionId);
@@ -127,7 +132,7 @@ function App() {
   // 更新会话配置
   const updateSessionConfig = async (sessionId, config) => {
     try {
-      const response = await fetch(`http://localhost:8000/sessions/${sessionId}`, createFetchOptions({
+      const response = await fetch(`${getApiBaseUrl()}/sessions/${sessionId}`, createFetchOptions({
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
@@ -187,7 +192,7 @@ function App() {
     setError(null);
     
     try {
-      const response = await fetch('http://localhost:8000/chat', createFetchOptions({
+      const response = await fetch(`${getApiBaseUrl()}/chat`, createFetchOptions({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -221,7 +226,7 @@ function App() {
     if (!currentSession) return;
     
     try {
-      await fetch(`http://localhost:8000/sessions/${currentSession.id}/messages`, createFetchOptions({
+      await fetch(`${getApiBaseUrl()}/sessions/${currentSession.id}/messages`, createFetchOptions({
         method: 'DELETE'
       }));
       
