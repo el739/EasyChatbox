@@ -169,6 +169,48 @@ def add_message_to_db(session_id: str, message: Message):
     conn.commit()
     conn.close()
 
+def update_message_in_db(session_id: str, message_index: int, new_message: Message):
+    """更新数据库中会话的特定消息"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # 获取消息的数据库ID（按顺序排列的第message_index条消息）
+    cursor.execute('''
+        SELECT id FROM messages 
+        WHERE session_id = ? 
+        ORDER BY id 
+        LIMIT 1 OFFSET ?
+    ''', (session_id, message_index))
+    
+    row = cursor.fetchone()
+    if row:
+        message_id = row['id']
+        # 更新消息内容
+        cursor.execute('''
+            UPDATE messages 
+            SET role = ?, content = ?, timestamp = ?
+            WHERE id = ?
+        ''', (
+            new_message.role,
+            new_message.content,
+            new_message.timestamp,
+            message_id
+        ))
+        
+        # 更新会话的updated_at时间
+        cursor.execute('''
+            UPDATE sessions 
+            SET updated_at = ? 
+            WHERE id = ?
+        ''', (
+            datetime.now().isoformat(),
+            session_id
+        ))
+        
+        conn.commit()
+    
+    conn.close()
+
 def clear_session_messages_from_db(session_id: str):
     """清空数据库中会话的消息"""
     conn = get_db_connection()

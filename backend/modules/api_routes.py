@@ -85,6 +85,24 @@ def setup_routes(app: FastAPI):
             return updated_session
         return {"error": "会话未找到"}
 
+    @app.put("/sessions/{session_id}/messages/{message_index}", dependencies=[auth_dependency] if auth_enabled else [])
+    async def edit_message_endpoint(session_id: str, message_index: int, message: Message):
+        """编辑会话中的消息"""
+        from .session_manager import edit_message_in_session
+        updated_session = edit_message_in_session(session_id, message_index, message)
+        if updated_session:
+            return updated_session
+        return {"error": "会话或消息未找到"}
+
+    @app.delete("/sessions/{session_id}/messages/{message_index}", dependencies=[auth_dependency] if auth_enabled else [])
+    async def delete_message_endpoint(session_id: str, message_index: int):
+        """删除会话中的消息"""
+        from .session_manager import delete_message_from_session
+        updated_session = delete_message_from_session(session_id, message_index)
+        if updated_session:
+            return updated_session
+        return {"error": "会话或消息未找到"}
+
     @app.delete("/sessions/{session_id}/messages", dependencies=[auth_dependency] if auth_enabled else [])
     async def clear_messages_endpoint(session_id: str):
         """清空会话消息"""

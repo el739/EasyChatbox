@@ -1,7 +1,7 @@
 from typing import Dict, List
 from datetime import datetime
 from .models import ChatSession, Message
-from .database import init_db, load_sessions_from_db, save_session_to_db, delete_session_from_db, add_message_to_db, clear_session_messages_from_db, update_session_in_db
+from .database import init_db, load_sessions_from_db, save_session_to_db, delete_session_from_db, add_message_to_db, clear_session_messages_from_db, update_session_in_db, update_message_in_db
 
 # 全局变量存储会话
 chat_sessions: Dict[str, ChatSession] = {}
@@ -96,6 +96,34 @@ def add_message_to_session(session_id: str, message: Message) -> ChatSession:
         add_message_to_db(session_id, message)
         
         # 更新会话到数据库
+        save_session_to_db(chat_sessions[session_id])
+        
+        return chat_sessions[session_id]
+    return None
+
+def edit_message_in_session(session_id: str, message_index: int, new_message: Message) -> ChatSession:
+    """编辑会话中的消息"""
+    if session_id in chat_sessions and 0 <= message_index < len(chat_sessions[session_id].messages):
+        chat_sessions[session_id].messages[message_index] = new_message
+        chat_sessions[session_id].updated_at = datetime.now().isoformat()
+        
+        # 更新数据库中的消息
+        update_message_in_db(session_id, message_index, new_message)
+        
+        # 更新会话到数据库
+        save_session_to_db(chat_sessions[session_id])
+        
+        return chat_sessions[session_id]
+    return None
+
+def delete_message_from_session(session_id: str, message_index: int) -> ChatSession:
+    """从会话中删除消息"""
+    if session_id in chat_sessions and 0 <= message_index < len(chat_sessions[session_id].messages):
+        # 删除消息
+        chat_sessions[session_id].messages.pop(message_index)
+        chat_sessions[session_id].updated_at = datetime.now().isoformat()
+        
+        # 重新保存所有消息到数据库（因为索引可能已改变）
         save_session_to_db(chat_sessions[session_id])
         
         return chat_sessions[session_id]

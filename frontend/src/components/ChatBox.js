@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './ChatBox.css';
 
-const ChatBox = ({ session, onSendMessage, onClearSession, loading }) => {
+const ChatBox = ({ session, onSendMessage, onClearSession, loading, onEditMessage, onDeleteMessage }) => {
   const [inputValue, setInputValue] = useState('');
+  const [editingMessageIndex, setEditingMessageIndex] = useState(null);
+  const [editingMessageContent, setEditingMessageContent] = useState('');
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -42,6 +44,33 @@ const ChatBox = ({ session, onSendMessage, onClearSession, loading }) => {
     setInputValue(newValue);
   };
 
+  // 开始编辑消息
+  const startEditing = (index, content) => {
+    setEditingMessageIndex(index);
+    setEditingMessageContent(content);
+  };
+
+  // 保存编辑的消息
+  const saveEdit = () => {
+    if (editingMessageContent.trim() && onEditMessage) {
+      onEditMessage(editingMessageIndex, editingMessageContent);
+    }
+    cancelEdit();
+  };
+
+  // 取消编辑
+  const cancelEdit = () => {
+    setEditingMessageIndex(null);
+    setEditingMessageContent('');
+  };
+
+  // 删除消息
+  const deleteMessage = (index) => {
+    if (window.confirm('确定要删除这条消息吗？') && onDeleteMessage) {
+      onDeleteMessage(index);
+    }
+  };
+
   return (
     <div className="chatbox">
       <div className="chatbox-header">
@@ -70,9 +99,42 @@ const ChatBox = ({ session, onSendMessage, onClearSession, loading }) => {
                     {new Date(message.timestamp).toLocaleTimeString()}
                   </span>
                 </div>
-                <div className="message-content">
-                  {message.content}
-                </div>
+                {editingMessageIndex === index ? (
+                  <div className="message-edit-container">
+                    <textarea
+                      value={editingMessageContent}
+                      onChange={(e) => setEditingMessageContent(e.target.value)}
+                      className="message-edit-textarea"
+                      autoFocus
+                    />
+                    <div className="message-edit-buttons">
+                      <button onClick={saveEdit} className="save-btn">保存</button>
+                      <button onClick={cancelEdit} className="cancel-btn">取消</button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="message-content">
+                      {message.content}
+                    </div>
+                    <div className="message-actions">
+                      <button 
+                        className="edit-btn"
+                        onClick={() => startEditing(index, message.content)}
+                        title="编辑消息"
+                      >
+                        ✏️
+                      </button>
+                      <button 
+                        className="delete-btn"
+                        onClick={() => deleteMessage(index)}
+                        title="删除消息"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             ))
           ) : (

@@ -217,6 +217,66 @@ function App() {
     }
   };
 
+  // 编辑消息
+  const editMessage = async (messageIndex, newContent) => {
+    if (!currentSession) return;
+    
+    try {
+      const updatedMessage = {
+        ...currentSession.messages[messageIndex],
+        content: newContent,
+        timestamp: new Date().toISOString()
+      };
+      
+      const response = await fetch(`${getApiBaseUrl()}/sessions/${currentSession.id}/messages/${messageIndex}`, createFetchOptions({
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updatedMessage)
+      }));
+      
+      const data = await response.json();
+      if (data.error) {
+        setError('编辑消息失败: ' + data.error);
+      } else {
+        setCurrentSession(data);
+        // 更新sessions列表
+        const updatedSessions = sessions.map(session => 
+          session.id === data.id ? data : session
+        );
+        setSessions(updatedSessions);
+      }
+    } catch (err) {
+      setError('编辑消息失败: ' + err.message);
+    }
+  };
+
+  // 删除消息
+  const deleteMessage = async (messageIndex) => {
+    if (!currentSession) return;
+    
+    try {
+      const response = await fetch(`${getApiBaseUrl()}/sessions/${currentSession.id}/messages/${messageIndex}`, createFetchOptions({
+        method: 'DELETE'
+      }));
+      
+      const data = await response.json();
+      if (data.error) {
+        setError('删除消息失败: ' + data.error);
+      } else {
+        setCurrentSession(data);
+        // 更新sessions列表
+        const updatedSessions = sessions.map(session => 
+          session.id === data.id ? data : session
+        );
+        setSessions(updatedSessions);
+      }
+    } catch (err) {
+      setError('删除消息失败: ' + err.message);
+    }
+  };
+
   // 清空当前会话
   const clearCurrentSession = async () => {
     if (!currentSession) return;
@@ -289,6 +349,8 @@ function App() {
             session={currentSession}
             onSendMessage={sendMessage}
             onClearSession={clearCurrentSession}
+            onEditMessage={editMessage}
+            onDeleteMessage={deleteMessage}
             loading={loading}
           />
         </div>
