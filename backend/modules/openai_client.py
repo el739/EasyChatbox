@@ -1,8 +1,8 @@
 from fastapi import HTTPException
-from typing import List, Dict
+from typing import List, Dict, Union
 from .config import openai_clients, default_client, provider_parameters
 
-async def call_openai_api(messages: List[Dict[str, str]], model: str, provider: str = None) -> str:
+async def call_openai_api(messages: List[Dict[str, Union[str, List[Dict]]]], model: str, provider: str = None) -> str:
     """调用OpenAI API"""
     client = None
     selected_provider = None

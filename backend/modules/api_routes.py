@@ -4,6 +4,7 @@ from typing import List, Dict
 from datetime import datetime
 import os
 import uuid
+import base64
 from .models import Message, ChatSession, SessionUpdate, ChatRequest
 from .session_manager import (
     get_sessions, create_session, get_session, update_session, 
@@ -30,6 +31,17 @@ def authenticate(credentials: HTTPBasicCredentials = Depends(security)):
             headers={"WWW-Authenticate": "Basic"},
         )
     return credentials.username
+
+def encode_image_to_base64(image_path: str) -> str:
+    """将图片文件编码为base64字符串"""
+    with open(image_path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode('utf-8')
+
+def is_image_file(file_path: str) -> bool:
+    """检查文件是否为图片"""
+    image_extensions = ['.png', '.jpg', '.jpeg', '.gif', '.webp']
+    _, ext = os.path.splitext(file_path)
+    return ext.lower() in image_extensions
 
 def setup_routes(app: FastAPI):
     """设置API路由"""
@@ -137,16 +149,46 @@ def setup_routes(app: FastAPI):
         # 准备消息历史用于API调用
         messages = []
         for msg in session.messages:
-            # 如果消息有文件URL，添加文件信息到内容中
-            content = msg.content
+            # 如果消息有文件URL，需要特殊处理图片文件
             if msg.file_urls:
-                file_info = "\n\n[已上传文件]:\n" + "\n".join([f"- {url}" for url in msg.file_urls])
-                content = msg.content + file_info
-            
-            messages.append({
-                "role": msg.role,
-                "content": content
-            })
+                # 创建包含文本和图片的内容数组
+                content_parts = [{"type": "text", "text": msg.content}]
+                
+                # 处理每个上传的文件
+                for file_url in msg.file_urls:
+                    # 转换URL为本地文件路径
+                    file_path = file_url.lstrip('/')
+                    
+                    # 检查文件是否存在且是图片
+                    if os.path.exists(file_path) and is_image_file(file_path):
+                        try:
+                            # 将图片编码为base64
+                            base64_image = encode_image_to_base64(file_path)
+                            # 添加图片到内容数组
+                            content_parts.append({
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/jpeg;base64,{base64_image}"
+                                }
+                            })
+                        except Exception as e:
+                            # 如果图片处理失败，添加错误信息到文本内容
+                            content_parts[0]["text"] += f"\n[图片处理失败: {str(e)}]"
+                    else:
+                        # 对于非图片文件，添加文件信息到文本内容
+                        content_parts[0]["text"] += f"\n\n[已上传文件]: {file_url}"
+                
+                # 添加消息到历史记录
+                messages.append({
+                    "role": msg.role,
+                    "content": content_parts
+                })
+            else:
+                # 没有文件的普通消息
+                messages.append({
+                    "role": msg.role,
+                    "content": msg.content
+                })
         
         # 调用OpenAI API
         try:
