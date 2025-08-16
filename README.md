@@ -1,207 +1,81 @@
 # EasyChatbox
 
-EasyChatbox 是一个基于 React 和 FastAPI 的聊天应用，支持与多个 AI 模型进行对话。用户可以通过简单的界面与 OpenAI、OpenRouter 等平台的模型进行交互。
+EasyChatbox 是一个简单的聊天应用，支持多种AI模型。它包含前端和后端两部分，前端基于React，后端基于Python FastAPI。
 
-## 功能特性
+## 配置
 
-- 多会话管理：创建、切换和删除聊天会话
-- 多模型支持：支持 OpenAI、OpenRouter 等平台的多种模型
-- 实时对话：与 AI 模型进行实时对话
-- 历史记录：保存和查看聊天历史
-- 简洁界面：直观易用的用户界面
+### 后端配置
 
-## 技术栈
+1. 编辑 `backend/config.json` 文件：
+   - 修改API密钥：将 `your-sk-here` 替换为实际的API密钥
+   - 修改认证信息（可选）：更改默认的用户名和密码
+   - 根据需要调整模型参数
 
-### 前端
-- React 18
-- Axios
-- CSS Modules
+### 前端配置
 
-### 后端
-- FastAPI
-- OpenAI Python SDK
-- Uvicorn (服务器)
+1. 在 `frontend` 目录下创建 `.env` 文件：
+   - 复制 `.env.example` 文件内容
+   - 设置 `REACT_APP_API_BASE_URL` 为后端服务地址（开发环境默认为 `http://localhost:8000`）
 
-## 项目结构
+## 安装依赖
 
-```
-EasyChatbox/
-├── backend/
-│   ├── main.py              # 后端入口文件
-│   ├── config.json          # 配置文件
-│   ├── requirements.txt     # Python 依赖
-│   └── modules/
-│       ├── api_routes.py    # API 路由
-│       ├── config.py        # 配置管理
-│       ├── models.py        # 数据模型
-│       ├── openai_client.py # OpenAI 客户端
-│       └── session_manager.py # 会话管理
-└── frontend/
-    ├── package.json         # 前端依赖配置
-    ├── public/
-    └── src/
-        ├── App.js           # 主应用组件
-        ├── components/
-        │   ├── ChatBox.js   # 聊天框组件
-        │   ├── ModelSelector.js # 模型选择器
-        │   └── SessionManager.js # 会话管理器
-        └── ...
-```
+### 后端依赖安装
 
-## 快速开始
-
-### 后端设置
-
-1. 进入后端目录：
-   ```bash
-   cd backend
+1. 确保已安装Python 3.8+
+2. 进入 `backend` 目录
+3. 运行以下命令安装依赖：
    ```
-
-2. 创建虚拟环境（推荐）：
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # Linux/Mac
-   # 或
-   venv\Scripts\activate     # Windows
-   ```
-
-3. 安装依赖：
-   ```bash
    pip install -r requirements.txt
    ```
 
-4. 配置 API 密钥：
-   编辑 `config.json` 文件，填入你的 API 密钥：
-   ```json
-   {
-     "providers": [
-       {
-         "name": "OpenAI",
-         "baseURL": "https://api.openai.com/v1",
-         "api_key": "your-openai-api-key",
-         "models": ["gpt-4o", "gpt-3.5-turbo"]
-       },
-       {
-         "name": "OpenRouter",
-         "baseURL": "https://openrouter.ai/v1",
-         "api_key": "your-openrouter-api-key",
-         "models": ["openai/gpt-4o", "google/gemini-1.5-flash"]
-       }
-     ]
-   }
+### 前端依赖安装
+
+1. 确保已安装Node.js 14+
+2. 进入 `frontend` 目录
+3. 运行以下命令安装依赖：
    ```
-
-5. 启动后端服务：
-   ```bash
-   python main.py
-   ```
-
-### 前端设置
-
-1. 进入前端目录：
-   ```bash
-   cd frontend
-   ```
-
-2. 安装依赖：
-   ```bash
    npm install
    ```
 
-3. 启动开发服务器：
-   ```bash
+## 启动
+
+### 手动启动
+
+1. 启动后端服务：
+   ```
+   cd backend
+   python main.py
+   ```
+   后端服务将在 `http://localhost:8000` 运行
+
+2. 启动前端服务：
+   ```
+   cd frontend
    npm start
    ```
+   前端服务将在 `http://localhost:3000` 运行
 
-4. 打开浏览器访问 `http://localhost:3000`
+### 一键启动（Windows）
 
-## API 接口
-
-后端提供以下 RESTful API 接口：
-
-- `GET /sessions` - 获取所有会话
-- `POST /sessions` - 创建新会话
-- `GET /sessions/{session_id}` - 获取特定会话
-- `PUT /sessions/{session_id}` - 更新会话配置
-- `DELETE /sessions/{session_id}` - 删除会话
-- `POST /sessions/{session_id}/messages` - 向会话添加消息
-- `DELETE /sessions/{session_id}/messages` - 清空会话消息
-- `POST /chat` - 与 AI 模型对话
-- `GET /config` - 获取配置信息
-
-## 开发
-
-### 后端开发
-
-后端使用 FastAPI 构建，提供了类型检查和自动生成的 API 文档。启动服务后，可以通过 `http://localhost:8000/docs` 访问交互式 API 文档。
-
-### 前端开发
-
-前端使用 React 构建，组件结构清晰：
-- `App.js` - 主应用组件，负责状态管理和协调各组件
-- `ChatBox.js` - 聊天界面组件
-- `SessionManager.js` - 会话管理组件
-- `ModelSelector.js` - 模型选择组件
-
-## 部署
-
-### 后端部署
-
-可以使用以下方式部署后端：
-
-1. 使用 Uvicorn（生产环境推荐使用 Gunicorn）：
-   ```bash
-   uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
-   ```
-
-2. 使用 Docker（需要 Dockerfile）：
-   ```bash
-   docker build -t easychatbox-backend .
-   docker run -p 8000:8000 easychatbox-backend
-   ```
-
-### 前端部署
-
-构建生产版本：
-```bash
-npm run build
+在项目根目录下运行：
+```
+start_windows.bat
 ```
 
-然后将 `build` 目录中的文件部署到 Web 服务器。
+### 一键启动（Linux/macOS）
 
-### 自定义域名配置
+在项目根目录下运行：
+```
+./start_linux.sh
+```
 
-本项目支持自定义域名配置，无需修改源代码：
+启动后，前端界面将在浏览器中自动打开，或访问 `http://localhost:3000` 手动打开。
 
-1. 前端环境变量配置：
-   - 开发环境：使用 `frontend/.env` 文件
-   - 生产环境：使用 `frontend/.env.production` 文件
-   
-   在这些文件中设置 `REACT_APP_API_BASE_URL` 变量来指定后端API地址：
-   ```env
-   # 开发环境
-   REACT_APP_API_BASE_URL=http://localhost:8000
-   
-   # 生产环境
-   REACT_APP_API_BASE_URL=https://backend.chat.mydomain.com
-   ```
+## 使用
 
-2. 后端CORS配置：
-   在 `backend/main.py` 中已配置允许的前端域名：
-   ```python
-   allow_origins=["http://localhost:3000", "https://chat.mydomain.com"]
-   ```
-   
-   如需添加更多域名，请在 `allow_origins` 列表中添加相应的域名。
+1. 首次使用需要登录：
+   - 用户名：admin
+   - 密码：securepassword
+   （可在 `backend/config.json` 中修改）
 
-3. 部署时的域名映射：
-   - 前端：`chat.mydomain.com` 指向前端静态文件服务器
-   - 后端：`backend.chat.mydomain.com` 指向后端API服务器
-
-## 许可证
-
-本项目采用 Apache 2.0 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
-
-## 贡献
-
-欢迎提交 Issue 和 Pull Request 来改进这个项目。
+2. 登录后可以选择不同的AI模型进行对话
