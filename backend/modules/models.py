@@ -7,6 +7,7 @@ class Message(BaseModel):
     role: str  # "user" or "assistant"
     content: str
     timestamp: str
+    file_urls: Optional[List[str]] = None  # URLs to uploaded files
 
 class ChatSession(BaseModel):
     id: str
@@ -31,3 +32,4 @@ class SessionUpdate(BaseModel):
 class ChatRequest(BaseModel):
     message: str
     session_id: str
+    file_urls: Optional[List[str]] = None

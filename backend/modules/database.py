@@ -1,5 +1,6 @@
 import sqlite3
 import os
+import json
 from typing import List, Optional
 from datetime import datetime
 from .models import ChatSession, Message
@@ -24,17 +25,25 @@ def init_db():
         )
     ''')
     
-    # 创建消息表
+    # 检查消息表是否存在，如果不存在则创建
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS messages (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             session_id TEXT NOT NULL,
             role TEXT NOT NULL,
             content TEXT NOT NULL,
+            file_urls TEXT,  -- JSON string of file URLs
             timestamp TEXT NOT NULL,
             FOREIGN KEY (session_id) REFERENCES sessions (id) ON DELETE CASCADE
         )
     ''')
+    
+    # 检查messages表是否有file_urls列，如果没有则添加
+    try:
+        cursor.execute("ALTER TABLE messages ADD COLUMN file_urls TEXT")
+    except sqlite3.OperationalError:
+        # 列已存在，忽略错误
+        pass
     
     # 创建索引以提高查询性能
     cursor.execute('''
@@ -66,14 +75,26 @@ def load_sessions_from_db() -> dict:
         cursor.execute("SELECT * FROM messages WHERE session_id = ? ORDER BY id", (row['id'],))
         message_rows = cursor.fetchall()
         
-        messages = [
-            Message(
-                role=msg_row['role'],
-                content=msg_row['content'],
-                timestamp=msg_row['timestamp']
+        import json
+
+        messages = []
+        for msg_row in message_rows:
+            # Parse file_urls from JSON string if it exists
+            file_urls = None
+            if msg_row['file_urls']:
+                try:
+                    file_urls = json.loads(msg_row['file_urls'])
+                except json.JSONDecodeError:
+                    file_urls = None
+            
+            messages.append(
+                Message(
+                    role=msg_row['role'],
+                    content=msg_row['content'],
+                    timestamp=msg_row['timestamp'],
+                    file_urls=file_urls
+                )
             )
-            for msg_row in message_rows
-        ]
         
         session = ChatSession(
             id=row['id'],
@@ -145,14 +166,18 @@ def add_message_to_db(session_id: str, message: Message):
     conn = get_db_connection()
     cursor = conn.cursor()
     
+    # Convert file_urls to JSON string if it exists
+    file_urls_json = json.dumps(message.file_urls) if message.file_urls else None
+    
     cursor.execute('''
         INSERT INTO messages 
-        (session_id, role, content, timestamp)
-        VALUES (?, ?, ?, ?)
+        (session_id, role, content, file_urls, timestamp)
+        VALUES (?, ?, ?, ?, ?)
     ''', (
         session_id,
         message.role,
         message.content,
+        file_urls_json,
         message.timestamp
     ))
     
@@ -174,6 +199,9 @@ def update_message_in_db(session_id: str, message_index: int, new_message: Messa
     conn = get_db_connection()
     cursor = conn.cursor()
     
+    # Convert file_urls to JSON string if it exists
+    file_urls_json = json.dumps(new_message.file_urls) if new_message.file_urls else None
+    
     # 获取消息的数据库ID（按顺序排列的第message_index条消息）
     cursor.execute('''
         SELECT id FROM messages 
@@ -188,11 +216,12 @@ def update_message_in_db(session_id: str, message_index: int, new_message: Messa
         # 更新消息内容
         cursor.execute('''
             UPDATE messages 
-            SET role = ?, content = ?, timestamp = ?
+            SET role = ?, content = ?, file_urls = ?, timestamp = ?
             WHERE id = ?
         ''', (
             new_message.role,
             new_message.content,
+            file_urls_json,
             new_message.timestamp,
             message_id
         ))

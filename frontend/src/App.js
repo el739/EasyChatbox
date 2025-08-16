@@ -161,14 +161,19 @@ function App() {
   };
 
   // 发送消息
-  const sendMessage = async (message) => {
-    if (!currentSession || !message.trim()) return;
+  const sendMessage = async (messageData) => {
+    // messageData can be a string (old format) or an object with message and fileUrls
+    const message = typeof messageData === 'string' ? messageData : messageData.message;
+    const fileUrls = typeof messageData === 'object' && messageData.fileUrls ? messageData.fileUrls : undefined;
+    
+    if (!currentSession || (!message.trim() && (!fileUrls || fileUrls.length === 0))) return;
     
     // 立即在本地添加用户消息
     const userMessage = {
       role: 'user',
       content: message,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      file_urls: fileUrls
     };
     
     // 更新当前会话状态（添加用户消息）
@@ -188,15 +193,22 @@ function App() {
     setError(null);
     
     try {
+      const requestBody = {
+        message: message,
+        session_id: currentSession.id
+      };
+      
+      // 只有当有文件URL时才添加到请求中
+      if (fileUrls && fileUrls.length > 0) {
+        requestBody.file_urls = fileUrls;
+      }
+      
       const response = await fetch(`${getApiBaseUrl()}/chat`, createFetchOptions({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          message: message,
-          session_id: currentSession.id
-        })
+        body: JSON.stringify(requestBody)
       }));
       
       const data = await response.json();
@@ -352,6 +364,8 @@ function App() {
             onEditMessage={editMessage}
             onDeleteMessage={deleteMessage}
             loading={loading}
+            username={username}
+            password={password}
           />
         </div>
       </div>

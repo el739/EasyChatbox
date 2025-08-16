@@ -1,7 +1,9 @@
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, File, UploadFile
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from typing import List, Dict
 from datetime import datetime
+import os
+import uuid
 from .models import Message, ChatSession, SessionUpdate, ChatRequest
 from .session_manager import (
     get_sessions, create_session, get_session, update_session, 
@@ -116,6 +118,7 @@ def setup_routes(app: FastAPI):
         """与LLM聊天（真实API调用）"""
         session_id = chat_request.session_id
         message = chat_request.message
+        file_urls = chat_request.file_urls
         
         # 获取会话信息
         session = get_session(session_id)
@@ -126,16 +129,23 @@ def setup_routes(app: FastAPI):
         user_message = Message(
             role="user",
             content=message,
-            timestamp=datetime.now().isoformat()
+            timestamp=datetime.now().isoformat(),
+            file_urls=file_urls
         )
         session = add_message_to_session(session_id, user_message)
         
         # 准备消息历史用于API调用
         messages = []
         for msg in session.messages:
+            # 如果消息有文件URL，添加文件信息到内容中
+            content = msg.content
+            if msg.file_urls:
+                file_info = "\n\n[已上传文件]:\n" + "\n".join([f"- {url}" for url in msg.file_urls])
+                content = msg.content + file_info
+            
             messages.append({
                 "role": msg.role,
-                "content": msg.content
+                "content": content
             })
         
         # 调用OpenAI API
@@ -190,3 +200,25 @@ def setup_routes(app: FastAPI):
             "default_provider": default_provider,
             "default_model": default_model
         }
+
+    @app.post("/upload", dependencies=[auth_dependency] if auth_enabled else [])
+    async def upload_file_endpoint(file: UploadFile = File(...)):
+        """上传文件"""
+        # 确保上传目录存在
+        upload_dir = "uploads"
+        if not os.path.exists(upload_dir):
+            os.makedirs(upload_dir)
+        
+        # 生成唯一文件名
+        file_extension = os.path.splitext(file.filename)[1] if '.' in file.filename else ''
+        unique_filename = f"{uuid.uuid4()}{file_extension}"
+        file_path = os.path.join(upload_dir, unique_filename)
+        
+        # 保存文件
+        with open(file_path, "wb") as buffer:
+            content = await file.read()
+            buffer.write(content)
+        
+        # 返回文件URL
+        file_url = f"/{file_path.replace(os.sep, '/')}"
+        return {"file_url": file_url}
